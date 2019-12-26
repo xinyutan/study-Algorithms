@@ -43,15 +43,16 @@ Equation ReadEquation() {
 }
 
 Position SelectPivotElement(
-  const Matrix &a, 
-  std::vector <bool> &used_rows, 
+  const Matrix &a,
+  std::vector <bool> &used_rows,
   std::vector <bool> &used_columns) {
     // This algorithm selects the first free element.
     // You'll need to improve it to pass the problem.
     Position pivot_element(0, 0);
     while (used_rows[pivot_element.row])
         ++pivot_element.row;
-    while (used_columns[pivot_element.column])
+    while (used_columns[pivot_element.column]
+           || abs(a[pivot_element.row][pivot_element.column]) < EPS)
         ++pivot_element.column;
     return pivot_element;
 }
@@ -65,11 +66,38 @@ void SwapLines(Matrix &a, Column &b, std::vector <bool> &used_rows, Position &pi
 
 void ProcessPivotElement(Matrix &a, Column &b, const Position &pivot_element) {
     // Write your code here
+    int n = b.size(), m = a[pivot_element.row].size();
+
+    // rescale to make pivot 1
+    double coefficient = a[pivot_element.row][pivot_element.column];
+    for (int i = 0; i < m; ++i)
+        a[pivot_element.row][i] /= coefficient;
+    b[pivot_element.row] /= coefficient;
+
+    // subtract pivot row from other rows
+    for (int i = 0; i < n; ++i) {
+        if (i == pivot_element.row) continue;
+        double scale = a[i][pivot_element.column] / a[pivot_element.row][pivot_element.column];
+        for (int j = 0; j < m; ++j)
+            a[i][j] = a[i][j] - scale * a[pivot_element.row][j];
+        b[i] = b[i] - scale * b[pivot_element.row];
+    }
 }
 
 void MarkPivotElementUsed(const Position &pivot_element, std::vector <bool> &used_rows, std::vector <bool> &used_columns) {
     used_rows[pivot_element.row] = true;
     used_columns[pivot_element.column] = true;
+}
+
+void PrintEquation(const Matrix &a, const Column &b) {
+  int n = b.size(), m = a[0].size();
+  for (int i = 0; i < n; ++i) {
+      std::cout << i << "th equation: ";
+      for (int j = 0; j < m; ++j) {
+          std::cout << a[i][j] << " ";
+      }
+      std::cout << "=" << b[i] << std::endl;
+  }
 }
 
 Column SolveEquation(Equation equation) {
@@ -85,7 +113,6 @@ Column SolveEquation(Equation equation) {
         ProcessPivotElement(a, b, pivot_element);
         MarkPivotElementUsed(pivot_element, used_rows, used_columns);
     }
-
     return b;
 }
 

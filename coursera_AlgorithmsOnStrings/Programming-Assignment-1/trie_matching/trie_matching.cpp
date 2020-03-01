@@ -37,11 +37,50 @@ int letterToIndex (char letter)
 	}
 }
 
+vector<Node> build_trie(const vector<string>& patterns) {
+  int tot_node = 1;
+  vector<Node> trie(1);
+  for (auto& p: patterns) {
+    int curr_node = 0;
+    for (auto& c: p) {
+      if (trie[curr_node].next[letterToIndex(c)] == NA) {
+        trie[curr_node].next[letterToIndex(c)] = tot_node;
+        trie.push_back(Node());
+        curr_node = tot_node;
+        tot_node += 1;
+      } else {
+        curr_node = trie[curr_node].next[letterToIndex(c)];
+      }
+    }
+  }
+  return trie;
+}
+
+bool is_match(const string& text, int start, vector<Node>& trie) {
+  int curr_node = 0;
+  for (int i = start; i < text.size(); ++i) {
+    char curr_l = text[i];
+    if (trie[curr_node].isLeaf())
+      return true;
+    else if (trie[curr_node].next[letterToIndex(curr_l)] == NA)
+      return false;
+    else
+      curr_node = trie[curr_node].next[letterToIndex(curr_l)];
+  }
+  return trie[curr_node].isLeaf();
+}
+
 vector <int> solve (const string& text, int n, const vector <string>& patterns)
 {
 	vector <int> result;
 
-	// write your code here
+  // build a trie
+  vector<Node> t = build_trie(patterns);
+
+  for (int i = 0; i < text.size(); ++i) {
+    if (is_match(text, i, t))
+      result.push_back(i);
+  }
 
 	return result;
 }
@@ -49,7 +88,7 @@ vector <int> solve (const string& text, int n, const vector <string>& patterns)
 int main (void)
 {
 	string t;
-	cin >> text;
+	cin >> t;
 
 	int n;
 	cin >> n;
